@@ -1,0 +1,86 @@
+# ===================
+# Python general
+# ===================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# ===================
+# Virtual environments
+# ===================
+venv/
+env/
+ENV/
+.venv/
+
+# ===================
+# Pytest & coverage
+# ===================
+.coverage
+.tox/
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# ===================
+# Flask specific: Instance configs & secrets
+# ===================
+instance/
+*.env
+*.env.*
+.env.local
+
+# ===================
+# Database
+# ===================
+*.sqlite3
+*.db
+
+# ===================
+# Migrations
+# ===================
+migrations/versions/
+
+# ===================
+# Logs & output
+# ===================
+*.log
+logs/
+*.pid
+
+# ===================
+# User uploads
+# ===================
+uploads/
+media/
+static/uploads/
+
+# ===================
+# IDE/editor stuff
+# ===================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ===================
+# OS junk
+# ===================
+.DS_Store
+Thumbs.db
+
+# ===================
+# Compiled / package artifacts
+# ===================
+dist/
+build/
+*.egg-info/
+
+# ===================
+# Node/npm stuff (optional)
+# ===================
+node_modules/
