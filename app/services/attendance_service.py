@@ -4,18 +4,18 @@ from app.models.user import User
 from datetime import datetime, date, timezone
 from geopy.distance import geodesic
 import uuid
-from pytz import utc
+# from pytz import utc
 import pytz
 
 IST = pytz.timezone('Asia/Kolkata')
 
 
-def to_ist(dt):
-    if dt is None:
-        return None
-    if dt.tzinfo is None:
-        dt = utc.localize(dt)
-    return dt.astimezone(IST).strftime('%Y-%m-%d %H:%M:%S')
+# def to_ist(dt):
+#     if dt is None:
+#         return None
+#     if dt.tzinfo is None:
+#         dt = utc.localize(dt)
+#     return dt.astimezone(IST).strftime('%Y-%m-%d %H:%M:%S')
 
 
 def punch_in(user_id, lat, lng):
@@ -40,7 +40,7 @@ def punch_in(user_id, lat, lng):
         user_id=user_id,
         office_id=office.id,
         date=today,
-        punch_in_time=datetime.now(timezone.utc),
+        punch_in_time=datetime.now(IST),
     )
     db.session.add(punch)
     db.session.commit()
@@ -48,8 +48,8 @@ def punch_in(user_id, lat, lng):
     return {
         "id": punch.id,
         "date": str(punch.date),
-        "punch_in_time": to_ist(punch.punch_in_time),
-        "punch_out_time": to_ist(punch.punch_out_time),
+        "punch_in_time": punch.punch_in_time,
+        "punch_out_time": punch.punch_out_time,
     }
 
 
@@ -75,10 +75,10 @@ def punch_out(user_id, lat, lng):
     if att.punch_out_time:
         raise ValueError("Already punched out today")
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(IST)
     punch_in_time = att.punch_in_time
     if punch_in_time.tzinfo is None:
-        punch_in_time = utc.localize(punch_in_time)
+        punch_in_time = IST.localize(punch_in_time)
 
     hours = (now - punch_in_time).total_seconds() / 3600
 
@@ -89,8 +89,8 @@ def punch_out(user_id, lat, lng):
     return {
         "id": att.id,
         "date": str(att.date),
-        "punch_in_time": to_ist(punch_in_time),
-        "punch_out_time": to_ist(att.punch_out_time),
+        "punch_in_time": punch_in_time,
+        "punch_out_time": att.punch_out_time,
         "total_hours": att.total_hours,
     }
 
@@ -104,8 +104,8 @@ def get_my_attendance(user_id):
     return [{
         "id": r.id,
         "date": str(r.date),
-        "punch_in_time": to_ist(r.punch_in_time),
-        "punch_out_time": to_ist(r.punch_out_time),
+        "punch_in_time": r.punch_in_time,
+        "punch_out_time": r.punch_out_time,
         "total_hours": r.total_hours,
     } for r in records]
 
@@ -126,8 +126,8 @@ def get_all_attendance(role):
         "user_designation": r.user.designation,
         "photo":r.user.photo,
         "date": str(r.date),
-        "punch_in_time": to_ist(r.punch_in_time),
-        "punch_out_time": to_ist(r.punch_out_time),
+        "punch_in_time": r.punch_in_time,
+        "punch_out_time": r.punch_out_time,
         "total_hours": r.total_hours,
     } for r in records]
 
@@ -137,6 +137,6 @@ def get_punch_status(user_id):
     if not user:
         raise KeyError("User not found")
 
-    today = date.today()
+    today = datetime.now(IST).date()
     record = Attendance.query.filter_by(user_id=user_id, date=today).first()
     return not record

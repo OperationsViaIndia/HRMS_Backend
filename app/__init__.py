@@ -31,6 +31,7 @@ def create_app():
     from flask_socketio import SocketIO
     from app.routes.tasks_routes import tasks_bp
     from app.routes.ticket_router import ticket_bp
+    from app.routes.app_version_routes import app_version_bp
 
 
 
@@ -59,6 +60,7 @@ def create_app():
     app.register_blueprint(message_bp, url_prefix='/api/message')
     app.register_blueprint(tasks_bp, url_prefix='/api/task')
     app.register_blueprint(ticket_bp, url_prefix='/api/tickets')
+    app.register_blueprint(app_version_bp, url_prefix='/api/app')
 
     configure_logging(app)
 
