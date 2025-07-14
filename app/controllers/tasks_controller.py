@@ -39,8 +39,9 @@ def get_task_by_id():
     try:
         task = get_all_tasks_id(request.user['id'])
 
-        if not task:
-            return error_response("Task not found",404)
+        if task is None or len(task) == 0:
+            return success_response("No tasks found", [])
+
         result = [{
             "id": t.id,
             "user_id": t.user_id,
@@ -49,7 +50,8 @@ def get_task_by_id():
             "created_at": t.created_at.isoformat(),
             "updated_at": t.updated_at.isoformat()
         } for t in task]
-        return success_response("Task fetched sucessfully",result)
+
+        return success_response("Task fetched successfully", result)
+
     except Exception as e:
-        return error_response(str(e),500)
-    
+        return error_response(str(e), 500)

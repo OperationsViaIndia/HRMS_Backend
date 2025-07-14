@@ -19,8 +19,10 @@ def get_all_tasks():
 
 def get_all_tasks_id(user_id):
     user = User.query.get(user_id)
-    print(user)
+    print("User found:", user)
     if not user:
         return None
+    print("Tasks found:", user.tasks)
     return user.tasks
+
 
