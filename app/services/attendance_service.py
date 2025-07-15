@@ -4,18 +4,19 @@ from app.models.user import User
 from datetime import datetime, date, timezone
 from geopy.distance import geodesic
 import uuid
-# from pytz import utc
 import pytz
 
 IST = pytz.timezone('Asia/Kolkata')
 
 
-# def to_ist(dt):
-#     if dt is None:
-#         return None
-#     if dt.tzinfo is None:
-#         dt = utc.localize(dt)
-#     return dt.astimezone(IST).strftime('%Y-%m-%d %H:%M:%S')
+def to_ist_string(dt):
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    dt_ist = dt.astimezone(IST)
+    return dt_ist.strftime('%Y-%m-%d %I:%M %p')
+
 
 
 def punch_in(user_id, lat, lng):
@@ -46,11 +47,11 @@ def punch_in(user_id, lat, lng):
     db.session.commit()
 
     return {
-        "id": punch.id,
-        "date": str(punch.date),
-        "punch_in_time": punch.punch_in_time,
-        "punch_out_time": punch.punch_out_time,
-    }
+    "id": punch.id,
+    "date": str(punch.date),
+    "punch_in_time": to_ist_string(punch.punch_in_time),
+    "punch_out_time": to_ist_string(punch.punch_out_time),
+}
 
 
 def punch_out(user_id, lat, lng):
@@ -87,12 +88,13 @@ def punch_out(user_id, lat, lng):
     db.session.commit()
 
     return {
-        "id": att.id,
-        "date": str(att.date),
-        "punch_in_time": punch_in_time,
-        "punch_out_time": att.punch_out_time,
-        "total_hours": att.total_hours,
-    }
+    "id": att.id,
+    "date": str(att.date),
+    "punch_in_time": to_ist_string(punch_in_time),
+    "punch_out_time": to_ist_string(att.punch_out_time),
+    "total_hours": att.total_hours,
+}
+
 
 
 def get_my_attendance(user_id):
@@ -102,12 +104,13 @@ def get_my_attendance(user_id):
 
     records = Attendance.query.filter_by(user_id=user_id).order_by(Attendance.date.desc()).all()
     return [{
-        "id": r.id,
-        "date": str(r.date),
-        "punch_in_time": r.punch_in_time,
-        "punch_out_time": r.punch_out_time,
-        "total_hours": r.total_hours,
-    } for r in records]
+    "id": r.id,
+    "date": str(r.date),
+    "punch_in_time": r.punch_in_time,
+    "punch_out_time":r.punch_out_time,
+    "total_hours": r.total_hours,
+} for r in records]
+
 
 
 def get_all_attendance(role):
@@ -119,17 +122,18 @@ def get_all_attendance(role):
     records = query.order_by(Attendance.date.desc()).all()
 
     return [{
-        "id": r.id,
-        "user_id": r.user_id,
-        "user_name": r.user.name,
-        "user_role": r.user.role.value,
-        "user_designation": r.user.designation,
-        "photo":r.user.photo,
-        "date": str(r.date),
-        "punch_in_time": r.punch_in_time,
-        "punch_out_time": r.punch_out_time,
-        "total_hours": r.total_hours,
-    } for r in records]
+    "id": r.id,
+    "user_id": r.user_id,
+    "user_name": r.user.name,
+    "user_role": r.user.role.value,
+    "user_designation": r.user.designation,
+    "photo": r.user.photo,
+    "date": str(r.date),
+    "punch_in_time": r.punch_in_time,
+    "punch_out_time": r.punch_out_time,
+    "total_hours": r.total_hours,
+} for r in records]
+
 
 
 def get_punch_status(user_id):
