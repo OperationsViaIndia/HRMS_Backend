@@ -3,7 +3,13 @@ import os
 from app import db
 from app.models.holiday import Holiday
 from app.utils.cloudinary_uploader import upload_to_cloudinary
+from datetime import datetime
+import pytz
 
+IST = pytz.timezone('Asia/Kolkata')
+
+def now_ist():
+    return datetime.now(IST).date()
 
 
 
@@ -26,7 +32,11 @@ def save_holiday(data, file):
 
 
 def get_all_holidays():
-    return Holiday.query.order_by(Holiday.date_from.asc()).all()
+    today = now_ist()
+    upcoming = Holiday.query.filter(Holiday.date_from >= today).order_by(Holiday.date_from.asc()).all()
+    past = Holiday.query.filter(Holiday.date_from < today).order_by(Holiday.date_from.asc()).all()
+    return upcoming + past
+
 def update_holiday_by_id(holiday_id, data, file):
     holiday = Holiday.query.get(holiday_id)
     if not holiday:
