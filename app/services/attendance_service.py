@@ -8,6 +8,13 @@ import pytz
 
 IST = pytz.timezone('Asia/Kolkata')
 
+def format_total_hours(hours_float):
+    if hours_float is None:
+        return None
+    hours = int(hours_float)
+    minutes = int((hours_float - hours) * 60)
+    return f"{hours} {minutes}"
+
 
 def to_ist_string(dt):
     if dt is None:
@@ -19,7 +26,7 @@ def to_ist_string(dt):
 
 
 
-def punch_in(user_id, lat, lng):
+def punch_in(user_id, lat, lng, device_info=None):
     user = User.query.get(user_id)
     if not user:
         raise KeyError("User not found")
@@ -42,6 +49,7 @@ def punch_in(user_id, lat, lng):
         office_id=office.id,
         date=today,
         punch_in_time=datetime.now(IST),
+        punch_in_device=device_info
     )
     db.session.add(punch)
     db.session.commit()
@@ -54,7 +62,7 @@ def punch_in(user_id, lat, lng):
 }
 
 
-def punch_out(user_id, lat, lng):
+def punch_out(user_id, lat, lng, device_info=None):
     user = User.query.get(user_id)
     if not user:
         raise KeyError("User not found")
@@ -85,6 +93,7 @@ def punch_out(user_id, lat, lng):
 
     att.punch_out_time = now
     att.total_hours = round(hours, 2)
+    att.punch_out_device = device_info
     db.session.commit()
 
     return {
@@ -92,7 +101,7 @@ def punch_out(user_id, lat, lng):
     "date": str(att.date),
     "punch_in_time": to_ist_string(punch_in_time),
     "punch_out_time": to_ist_string(att.punch_out_time),
-    "total_hours": att.total_hours,
+    "total_hours": format_total_hours(att.total_hours),
 }
 
 
@@ -108,7 +117,7 @@ def get_my_attendance(user_id):
     "date": str(r.date),
     "punch_in_time": r.punch_in_time,
     "punch_out_time":r.punch_out_time,
-    "total_hours": r.total_hours,
+    "total_hours": format_total_hours(r.total_hours),
 } for r in records]
 
 
@@ -131,7 +140,7 @@ def get_all_attendance(role):
     "date": str(r.date),
     "punch_in_time": r.punch_in_time,
     "punch_out_time": r.punch_out_time,
-    "total_hours": r.total_hours,
+    "total_hours": format_total_hours(r.total_hours),
 } for r in records]
 
 
@@ -143,4 +152,43 @@ def get_punch_status(user_id):
 
     today = datetime.now(IST).date()
     record = Attendance.query.filter_by(user_id=user_id, date=today).first()
-    return not record
+
+    if record:
+        return {
+            "punchedIn": record.punch_in_time is not None,
+            "punchedOut": record.punch_out_time is not None,
+            "punchInTime": record.punch_in_time,
+            "punchOutTime": record.punch_out_time,
+            "totalHours": format_total_hours(record.total_hours) if record.punch_out_time else None
+        }
+    else:
+        return {
+            "punchedIn": False,
+            "punchedOut": False,
+            "punchInTime": None,
+            "punchOutTime": None,
+            "totalHours": None
+        }
+
+
+def auto_punch_out_all():
+    today = datetime.now(IST).date()
+    now = datetime.now(IST)
+
+    records = Attendance.query.filter(
+        Attendance.date == today,
+        Attendance.punch_in_time.isnot(None),
+        Attendance.punch_out_time.is_(None)
+    ).all()
+
+    for att in records:
+        punch_in_time = att.punch_in_time
+        if punch_in_time.tzinfo is None:
+            punch_in_time = IST.localize(punch_in_time)
+
+        hours = (now - punch_in_time).total_seconds() / 3600
+        att.punch_out_time = now
+        att.total_hours = round(hours, 2)
+
+    db.session.commit()
+    return f"Auto-punched out {len(records)} users"

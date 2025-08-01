@@ -40,7 +40,8 @@ class Attendance(db.Model):
     punch_in_time = db.Column(db.DateTime, nullable=True)
     punch_out_time = db.Column(db.DateTime, nullable=True)
     total_hours = db.Column(db.Float, nullable=True)
-
+    punch_in_device = db.Column(db.String(255), nullable=True)
+    punch_out_device = db.Column(db.String(255), nullable=True)
     created_at = db.Column(db.DateTime(timezone=True), default=now_ist)
     updated_at = db.Column(db.DateTime(timezone=True), default=now_ist, onupdate=now_ist)
 

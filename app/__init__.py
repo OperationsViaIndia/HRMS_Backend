@@ -7,7 +7,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 import os
 from .extensions import db, socketio
-
+from app.services.attendance_service import auto_punch_out_all
 
 migrate = Migrate()
 
@@ -46,6 +46,8 @@ def create_app():
    
     CORS(app)
     socketio.init_app(app)
+    register_cli_commands(app)
+
     if __name__ == "__main__":
      socketio.run(app, debug=True)
 
@@ -87,29 +89,6 @@ def create_app():
     @app.route("/api/health")
     def health():
         return {"status": "ok"}, 200
-    # @app.route('/uploads/holidays/<path:filename>')
-    # def uploaded_file(filename):
-    #  uploads_dir = os.path.join(current_app.root_path, '..', 'uploads', 'holidays')
-    #  uploads_dir = os.path.abspath(uploads_dir)
-    #  return send_from_directory(uploads_dir, filename)
-
-
-    
-    # @app.route('/uploads/messages/<path:filename>')
-    # def uploaded_message_file(filename):
-    #  uploads_dir = os.path.join(current_app.root_path, '..', 'uploads', 'messages')
-    #  uploads_dir = os.path.abspath(uploads_dir)
-    #  return send_from_directory(uploads_dir, filename)
-
-    
-    # @app.route('/uploads/user/<path:filename>')
-    # def uploaded_user_file(filename):
-    #     uploads_dir = os.path.join(current_app.root_path, '..', 'uploads', 'user')
-    #     uploads_dir = os.path.abspath(uploads_dir)
-    #     return send_from_directory(uploads_dir, filename)
-
-  
-
 
     return app
 
@@ -135,3 +114,11 @@ def configure_logging(app):
     app.logger.setLevel(logging.INFO)
     app.logger.addHandler(file_handler)
     app.logger.addHandler(console_handler)
+    
+def register_cli_commands(app):
+    @app.cli.command("auto_punch_out")
+    def auto_punch_out():
+        """Auto punch out employees at 11:45 PM IST."""
+        with app.app_context():
+            result = auto_punch_out_all()
+            print(result)

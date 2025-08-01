@@ -13,7 +13,8 @@ from app.middlewares.auth import authenticate, authorize
 def punch_in_controller():
     try:
         data = PunchInSchema(**request.get_json()).dict()
-        result = punch_in(request.user['id'], data['latitude'], data['longitude'])
+        device_info = data.get("device_info")
+        result = punch_in(request.user['id'], data['latitude'], data['longitude'], device_info)
         return success_response('Punched in', result)
     except KeyError as e:
         return error_response(str(e), 404)
@@ -28,7 +29,8 @@ def punch_in_controller():
 def punch_out_controller():
     try:
         data = PunchOutSchema(**request.get_json()).dict()
-        result = punch_out(request.user['id'], data['latitude'], data['longitude'])
+        device_info = data.get("device_info")
+        result = punch_out(request.user['id'], data['latitude'], data['longitude'], device_info)
         return success_response('Punched out', result)
     except KeyError as e:
         return error_response(str(e), 404)
@@ -71,11 +73,12 @@ def get_all_attendance_controller():
 @authorize(['ADMIN', 'EMPLOYEE'])
 def get_punch_status_controller():
     try:
-        can_punch_in = get_punch_status(request.user['id'])
-        return success_response('Punch-in status', {'canPunchIn': can_punch_in})
+        status = get_punch_status(request.user['id'])
+        return success_response('Punch status', status)
     except KeyError as e:
         return error_response(str(e), 404)
     except ValueError as e:
         return error_response(str(e), 400)
     except Exception as e:
         return error_response(str(e), 500)
+

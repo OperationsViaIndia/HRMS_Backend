@@ -16,10 +16,11 @@ from werkzeug.utils import secure_filename
 from flask import current_app
 from app.models.message import Message
 from sqlalchemy import or_
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from app.utils.cloudinary_uploader import upload_to_cloudinary
 from app.models.tasks import Tasks
 from app.models.ticket import Ticket
+
 
 def create_user(data, assigned_clients):
     office_id = data.get('office_id')
@@ -66,18 +67,23 @@ def get_user_by_email(email):
 def get_user_by_phone(phone):
     return User.query.filter_by(phone=phone).first()
 
+def calculate_current_salary(user):
+    if user.doj is None:
+        return None
 
+    probation_end_date = user.doj + timedelta(days=90) 
+    today = date.today()
+
+    if today >= probation_end_date:
+        return user.full_time_salary
+    else:
+        return user.probation_salary
+    
 def get_user_by_id(user_id):
     user = User.query.get(user_id)
     if not user:
         raise KeyError("User not found")
-    current_salary = None
-    if user.probation_status == ProbationStatus.IN:
-        current_salary = user.probation_salary
-    elif user.probation_status == ProbationStatus.COMPLETED:
-        current_salary = user.full_time_salary
-
-    
+    current_salary = calculate_current_salary(user)
     user.current_salary = current_salary
     user.employee_code = user.employee_code 
 
@@ -182,12 +188,7 @@ def get_user_salaries(role):
     salaries = []
     total = 0
     for u in users:
-       
-        current_salary = None
-        if u.probation_status == ProbationStatus.IN:
-            current_salary = u.probation_salary
-        elif u.probation_status == ProbationStatus.COMPLETED:
-            current_salary = u.full_time_salary
+        current_salary = calculate_current_salary(u) 
 
         salaries.append({
             "id": u.id,
@@ -202,6 +203,7 @@ def get_user_salaries(role):
             "full_time_salary": u.full_time_salary,
             "currentSalary": current_salary
         })
+
         total += current_salary or 0
 
     return {
@@ -243,10 +245,10 @@ def get_full_user_details(user_id):
         {
             "id": att.id,
             "date": att.date.isoformat(),
-            "punch_in": att.punch_in_time.isoformat() if att.punch_in_time else None,
-            "punch_out": att.punch_out_time.isoformat() if att.punch_out_time else None,
+            "punch_in": att.punch_in_time if att.punch_in_time else None,
+            "punch_out": att.punch_out_time if att.punch_out_time else None,
             "total_hours": att.total_hours
-        } for att in getattr(user, 'attendance', [])
+        } for att in sorted(getattr(user, 'attendance', []), key=lambda x: x.date, reverse=True)
     ]
 
     user_data["reimbursements"] = [
