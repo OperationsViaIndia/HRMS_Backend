@@ -50,24 +50,17 @@ def request_leave(user_id, data):
 def get_leave_balance(user_id):
     approved = LeaveStatus.query.filter_by(user_id=user_id, status=LeaveRequestStatus.APPROVED).all()
 
-    summary = {
-        'SICK': 0,
-        'CASUAL': 0
-    }
+    total_used = 0
 
     for l in approved:
         days = get_day_count(l.from_date, l.to_date)
-        summary[l.type.value] += days
+        total_used += days
+
+    total_leave = MAX_SICK + MAX_CASUAL
 
     return {
-        'sick': {
-            'used': summary['SICK'],
-            'remaining': MAX_SICK - summary['SICK']
-        },
-        'casual': {
-            'used': summary['CASUAL'],
-            'remaining': MAX_CASUAL - summary['CASUAL']
-        }
+        'used': total_used,
+        'remaining': total_leave - total_used
     }
 
 def list_leaves(user):
@@ -99,6 +92,8 @@ def list_user_leaves(user_id, leave_type='ALL'):
             raise Exception('Invalid leave type. Use SICK, CASUAL, or ALL.')
 
     return query.order_by(LeaveStatus.created_at.desc()).all()
+
+
 def list_user_all_leaves(user_id):
     print("________________________",user_id)
     query = LeaveStatus.query.options(joinedload(LeaveStatus.user)).filter_by(user_id=user_id)

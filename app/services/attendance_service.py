@@ -5,6 +5,12 @@ from datetime import datetime, date, timezone
 from geopy.distance import geodesic
 import uuid
 import pytz
+from sqlalchemy import extract, and_
+from app.models.client import Client
+from app.models.office import Office
+from app.models.user import user_clients
+
+
 
 IST = pytz.timezone('Asia/Kolkata')
 
@@ -106,19 +112,23 @@ def punch_out(user_id, lat, lng, device_info=None):
 
 
 
-def get_my_attendance(user_id):
+def get_my_attendance(user_id, month, year):
     user = User.query.get(user_id)
     if not user:
         raise KeyError("User not found")
 
-    records = Attendance.query.filter_by(user_id=user_id).order_by(Attendance.date.desc()).all()
+    records = Attendance.query.filter_by(user_id=user_id)\
+        .filter(extract('month', Attendance.date) == month)\
+        .filter(extract('year', Attendance.date) == year)\
+        .order_by(Attendance.date.desc()).all()
+
     return [{
-    "id": r.id,
-    "date": str(r.date),
-    "punch_in_time": r.punch_in_time,
-    "punch_out_time":r.punch_out_time,
-    "total_hours": format_total_hours(r.total_hours),
-} for r in records]
+        "id": r.id,
+        "date": str(r.date),
+        "punch_in_time": r.punch_in_time,
+        "punch_out_time": r.punch_out_time,
+        "total_hours": format_total_hours(r.total_hours),
+    } for r in records]
 
 
 
@@ -192,3 +202,47 @@ def auto_punch_out_all():
 
     db.session.commit()
     return f"Auto-punched out {len(records)} users"
+
+
+def get_all_attendance_filtered(office_id, client_id, month, year, role):
+    query = Attendance.query.join(User).join(User.office)
+
+    if client_id != 'ALL':
+        query = query.join(User.clients) 
+
+    filters = []
+
+    if office_id != 'ALL':
+        filters.append(Attendance.office_id == office_id)
+
+    if client_id != 'ALL':
+        filters.append(Client.id == client_id) 
+
+    if month != 'ALL':
+        filters.append(extract('month', Attendance.date) == month)
+
+    if year != 'ALL':
+        filters.append(extract('year', Attendance.date) == year)
+
+    if role != 'ALL':
+        filters.append(User.role == role)
+
+    if filters:
+        query = query.filter(and_(*filters))
+
+    records = query.order_by(Attendance.date.desc()).all()
+
+    return [{
+        "id": r.id,
+        "user_id": r.user_id,
+        "user_name": r.user.name,
+        "user_role": r.user.role.value if hasattr(r.user.role, 'value') else r.user.role,
+        "user_designation": r.user.designation,
+        "photo": r.user.photo,
+        "office_id": r.office_id,
+        "office_name": r.office.name if r.office else None,
+        "date": str(r.date),
+        "punch_in_time": r.punch_in_time,
+        "punch_out_time": r.punch_out_time,
+        "total_hours": format_total_hours(r.total_hours),
+    } for r in records]

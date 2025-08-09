@@ -8,3 +8,5 @@ attendance_bp.post('/punchout')(attendance_controller.punch_out_controller)
 attendance_bp.get('/me')(attendance_controller.get_my_attendance_controller)
 attendance_bp.get('/all')(attendance_controller.get_all_attendance_controller)
 attendance_bp.get('/status')(attendance_controller.get_punch_status_controller)
+attendance_bp.get('/all-filtered')(attendance_controller.get_all_attendance_filtered_controller)
+

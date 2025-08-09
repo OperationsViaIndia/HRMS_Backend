@@ -42,7 +42,8 @@ def get_all_leaves():
             "from_date": l.from_date.isoformat(),
             "to_date": l.to_date.isoformat(),
             "status": l.status.value,
-            "reason": l.reason
+            "reason": l.reason,
+            "created_at": l.created_at
         } for l in leaves]
         return success_response('Pending leaves fetched', result)
     except Exception as e:

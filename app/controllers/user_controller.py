@@ -193,7 +193,7 @@ def get_other_users_list(role):
     except Exception as e:
         return error_response(str(e), 500)
 @authenticate()
-@authorize(['SUPER_ADMIN', 'ADMIN'])
+@authorize(['SUPER_ADMIN', 'ADMIN', 'EMPLOYEE'])
 def get_next_birthdays_controller():
     try:
         birthdays = get_next_birthdays()

@@ -27,6 +27,7 @@ def get_all_tickets():
             'title': t.title,
             'description': t.description,
             'status': t.status.value,
+            "created_at":t.created_at
         } for t in tickets]
         return success_response('Tickets fetched', result)
     except Exception as e:
@@ -60,7 +61,8 @@ def get_pending_tickets():
                 'title': ticket.title,
                 'description': ticket.description,
                 'status': ticket.status.value,
-                'photo': user.photo
+                'photo': user.photo,
+                'created_at': ticket.created_at
             })
         return success_response('Pending tickets fetched', data)
     except Exception as e:

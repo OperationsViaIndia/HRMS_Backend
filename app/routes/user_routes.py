@@ -35,7 +35,7 @@ user_bp.get('/message-users/<role>')(
     authenticate()(user_controller.get_other_users_list)
 )
 user_bp.get('/recent-birthdays')(
-    authenticate()(authorize(['SUPER_ADMIN', 'ADMIN'])(user_controller.get_next_birthdays_controller))
+    authenticate()(authorize(['SUPER_ADMIN', 'ADMIN', 'EMPLOYEE'])(user_controller.get_next_birthdays_controller))
 )
 
 

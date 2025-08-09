@@ -36,6 +36,7 @@ def get_all_reimbursements():
             'reason': i.reason,
             'bill': i.bill,
             'status': i.status.value,
+            "created_at":i.created_at
         } for i in items]
         return success_response('Reimbursements fetched', result)
     except Exception as e:
@@ -68,7 +69,8 @@ def get_pending_reimbursements():
                 'reason': reimb.reason,
                 'bill': reimb.bill,
                 'status': reimb.status.value,
-                "photo":user.photo
+                "photo":user.photo,
+                "created_at":reimb.created_at
             })
         return success_response('Pending reimbursements fetched', data)
     except Exception as e:

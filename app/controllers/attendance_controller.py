@@ -2,11 +2,11 @@ from flask import request
 from app.schemas.attendance_schema import PunchInSchema, PunchOutSchema
 from app.services.attendance_service import (
     punch_in, punch_out, get_my_attendance,
-    get_all_attendance, get_punch_status
+    get_all_attendance, get_punch_status,get_all_attendance_filtered
 )
 from app.utils.response_wrapper import success_response, error_response
 from app.middlewares.auth import authenticate, authorize
-
+from datetime import datetime
 
 @authenticate()
 @authorize(['ADMIN', 'EMPLOYEE'])
@@ -44,7 +44,21 @@ def punch_out_controller():
 @authorize(['ADMIN', 'EMPLOYEE'])
 def get_my_attendance_controller():
     try:
-        result = get_my_attendance(request.user['id'])
+        
+        month = request.args.get('month', None)
+        year = request.args.get('year', None)
+        
+        if month:
+            month = int(month)
+        else:
+            month = datetime.now().month
+        
+        if year:
+            year = int(year)
+        else:
+            year = datetime.now().year
+        
+        result = get_my_attendance(request.user['id'], month, year)
         return success_response('My attendance', result)
     except KeyError as e:
         return error_response(str(e), 404)
@@ -82,3 +96,27 @@ def get_punch_status_controller():
     except Exception as e:
         return error_response(str(e), 500)
 
+@authenticate()
+@authorize(['SUPER_ADMIN', 'ADMIN'])
+def get_all_attendance_filtered_controller():
+    try:
+        office_id = request.args.get('office', 'ALL')
+        client_id = request.args.get('client', 'ALL')
+        month = request.args.get('month', 'ALL')
+        year = request.args.get('year', datetime.now().year)
+        role = request.args.get('role', 'ALL').upper()
+
+        if month != 'ALL':
+            month = int(month)
+        if year != 'ALL':
+            year = int(year)
+
+        result = get_all_attendance_filtered(office_id, client_id, month, year, role)
+        return success_response('Filtered attendance list', result)
+
+    except KeyError as e:
+        return error_response(str(e), 404)
+    except ValueError as e:
+        return error_response(str(e), 400)
+    except Exception as e:
+        return error_response(str(e), 500)
